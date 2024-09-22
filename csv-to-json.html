@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV to JSON Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>CSV to JSON Converter</h1>
+    
+    <!-- Input file CSV -->
+    <input type="file" id="fileInput" accept=".csv">
+    <button onclick="convertCSVFile()">Convert CSV File to JSON</button>
+    
+    <h3>OR</h3>
+
+    <!-- Input text CSV -->
+    <textarea id="csvInput" placeholder="Or paste your CSV here..."></textarea>
+    <button onclick="convertCSVText()">Convert CSV Text to JSON</button>
+
+    <h3>Output JSON:</h3>
+    <textarea id="jsonOutput" placeholder="Output will appear here..." readonly></textarea>
+    <br>
+    <button onclick="copyToClipboard()">Copy to Clipboard</button>
+
+    <script>
+        // Chuyển đổi tệp CSV
+        function convertCSVFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                
+                reader.onload = function(event) {
+                    const csv = event.target.result;
+                    convertCSVtoJSON(csv);
+                };
+
+                reader.readAsText(file);
+            } else {
+                alert("Please select a CSV file first.");
+            }
+        }
+
+        // Chuyển đổi CSV từ văn bản
+        function convertCSVText() {
+            const csv = document.getElementById("csvInput").value;
+            if (csv) {
+                convertCSVtoJSON(csv);
+            } else {
+                alert("Please paste your CSV text.");
+            }
+        }
+
+        // Hàm chuyển đổi CSV sang JSON
+        function convertCSVtoJSON(csv) {
+            const lines = csv.split("\n");
+            
+            // Lấy các tiêu đề từ dòng đầu tiên
+            const headers = lines[0].split(",");
+
+            // Khởi tạo mảng cho JSON
+            const result = [];
+
+            // Lặp qua các dòng CSV còn lại
+            for (let i = 1; i < lines.length; i++) {
+                const currentLine = lines[i].split(",");
+
+                // Chỉ xử lý dòng nếu số lượng cột bằng với số tiêu đề
+                if (currentLine.length === headers.length) {
+                    const obj = {};
+                    for (let j = 0; j < headers.length; j++) {
+                        obj[headers[j].trim()] = currentLine[j]?.trim() || "";  // Sử dụng dấu ? để tránh undefined
+                    }
+                    result.push(obj);
+                }
+            }
+
+            // Hiển thị JSON trong thẻ <textarea>
+            document.getElementById("jsonOutput").value = JSON.stringify(result, null, 4);
+        }
+
+        // Hàm sao chép JSON vào clipboard
+        function copyToClipboard() {
+            const jsonOutput = document.getElementById("jsonOutput");
+            jsonOutput.select();
+            document.execCommand("copy");
+            alert("JSON copied to clipboard!");
+        }
+    </script>
+</body>
+</html>

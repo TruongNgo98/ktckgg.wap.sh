@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra cứu IP Host</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="favicon.png">
+    <style>
+        table {
+            /* width: 50%; */
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        #result {
+            display: none;
+            /* Ẩn bảng ban đầu */
+        }
+
+        .copy-button {
+            cursor: pointer;
+            color: #4CAF50;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            background-color: transparent;
+            border: none;
+            outline: none;
+        }
+
+        .copy-button i {
+            margin-right: 5px;
+        }
+
+        #copyNotification {
+            display: none;
+            /* Ẩn thông báo ban đầu */
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h2>Tra cứu địa chỉ IP và tên host</h2>
+        <br>
+        <!-- Chọn chức năng tra cứu -->
+        <div class="mb-2">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="inlineRadioOptions" id="searchByHost" value="host"
+                    onchange="toggleSearchType()" checked>
+                <label class="form-check-label" for="searchByHost">Tìm theo tên host</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="inlineRadioOptions" id="searchByIP" value="ip"
+                    onchange="toggleSearchType()">
+                <label class="form-check-label" for="searchByIP">Tìm theo IP</label>
+            </div>
+        </div>
+
+        <!-- Tìm kiếm theo tên host -->
+        <div id="hostSearch" class="row">
+            <label for="host" class="col-sm-2 col-form-label">Nhập tên host</label>
+            <div class="col-sm-3">
+                <input type="text" class="form-control" id="host" onkeyup="handleKeyUp(event, 'host')">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-dark mb-2" onclick="searchByHostBnt()">Tra cứu</button>
+            </div>
+        </div>
+
+        <!-- Tìm kiếm theo IP -->
+        <div id="ipSearch" class="row" style="display: none;">
+            <label for="ip" class="col-sm-2 col-form-label">Nhập địa chỉ ip</label>
+            <div class="col-sm-3">
+                <input type="text" class="form-control" id="ip" onkeyup="handleKeyUp(event, 'ip')">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-dark mb-2" onclick="searchByIP()">Tra cứu</button>
+            </div>
+        </div>
+
+        <br>
+
+        <!-- Chọn số dòng hiển thị trên mỗi trang -->
+        <div class="row">
+            <label for="resultsPerPage" class="col-auto">Số dòng hiển thị trên mỗi trang: </label>
+            <select id="resultsPerPage" class="form-select" style="width: 70px;" onchange="changeResultsPerPage()">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+            </select>
+            <!-- Hiển thị số kết quả tìm được -->
+            <p id="searchResultsCount" style="font-weight: bold;"></p>
+        </div>
+
+        <!-- Khu vực hiển thị kết quả -->
+        <div class="d-flex justify-content-center">
+            <div id="result">
+                <table id="resultTable">
+                    <thead>
+                        <tr>
+                            <th>Host</th>
+                            <th>Địa chỉ IP</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Các dòng kết quả sẽ được chèn vào đây -->
+                    </tbody>
+                </table>
+                <p id="noResultsMessage" style="color: red;"></p>
+            </div>
+        </div>
+
+        <!-- Thông báo sao chép -->
+        <div id="copyNotification">Địa chỉ IP đã được sao chép!</div>
+
+        <!-- Phân trang -->
+        <nav id="paginationNav" aria-label="Page navigation" style="display: none;">
+            <div class="row justify-content-center mt-3 mb-3">
+                <label for="jumpToPage" class="col-sm-1 col-form-label">Đến trang:</label>
+                <input type="number" id="jumpToPage" min="1" class="form-control"
+                    style="width: 70px; margin-left: 10px;" />
+                <div class="col-auto">
+                    <button onclick="jumpToPage()" class="btn btn-outline-dark">Go</button>
+                </div>
+            </div>
+            <ul class="pagination justify-content-center">
+                <!-- Nút phân trang sẽ được tạo động -->
+            </ul>
+        </nav>
+        <!-- Hiển thị tổng số trang -->
+        <p id="totalPagesDisplay" style="text-align: center; margin-top: 10px;"></p>
+    </div>
+
+    <!-- Nhúng file data.js -->
+    <script src="data.js"></script>
+
+    <script>
+        // Biến toàn cục để quản lý trang
+        let currentPage = 1;
+        let resultsPerPage = 10; // Số kết quả hiển thị trên mỗi trang
+        let filteredResults = []; // Biến toàn cục để lưu kết quả tìm kiếm
+
+        // Hàm xử lý sự kiện khi nhấn phím
+        function handleKeyUp(event, searchType) {
+            if (event.keyCode === 13) { // Kiểm tra xem phím Enter có được nhấn không
+                if (searchType === 'host') {
+                    searchByHostBnt(); // Tìm kiếm theo tên host
+                } else if (searchType === 'ip') {
+                    searchByIPBnt(); // Tìm kiếm theo IP
+                }
+            }
+        }
+
+        // Hàm bật tắt loại tra cứu (theo host hoặc theo IP)
+        function toggleSearchType() {
+            const isHostSelected = document.getElementById('searchByHost').checked;
+
+            // Hiển thị ô tìm kiếm tương ứng
+            document.getElementById('hostSearch').style.display = isHostSelected ? 'flex' : 'none';
+            document.getElementById('ipSearch').style.display = isHostSelected ? 'none' : 'flex';
+        }
+
+        function searchByHostBnt() {
+            currentPage = 1;
+            searchByHost();
+        }
+
+        function searchByIPBnt() {
+            currentPage = 1;
+            searchByIP();
+        }
+
+        // Hàm tìm kiếm host theo tên
+        function searchByHost() {
+            const hostName = document.getElementById('host').value.trim().toLowerCase();
+            filteredResults = hostsData.filter(item => item.host.toLowerCase().includes(hostName));
+            // currentPage = 1;
+            displayResults(filteredResults); // Hiển thị kết quả tìm kiếm
+        }
+
+        // Hàm tìm kiếm host theo địa chỉ IP
+        function searchByIP() {
+            const ipAddress = document.getElementById('ip').value.trim();
+            filteredResults = hostsData.filter(item => item.ip === ipAddress);
+            // currentPage = 1;
+            displayResults(filteredResults); // Hiển thị kết quả tìm kiếm
+        }
+
+        // Hàm hiển thị kết quả tìm kiếm với phân trang
+        function displayResults(filteredResults) {
+            const tableBody = document.getElementById('resultTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; // Xóa nội dung cũ
+            const resultDiv = document.getElementById('result');
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            const paginationNav = document.getElementById('paginationNav');
+            // const resultsCount = document.getElementById('resultsCount');
+            const searchResultsCount = document.getElementById('searchResultsCount'); // Phần tử để hiển thị số kết quả tìm kiếm được
+            const totalResults = filteredResults.length;
+            console.log(totalResults);
+
+            if (totalResults > 0) {
+                resultDiv.style.display = 'block'; // Hiển thị bảng khi có kết quả
+                noResultsMessage.textContent = ''; // Xóa thông báo không có kết quả
+                paginationNav.style.display = 'block'; // Hiển thị thanh phân trang
+
+                // Hiển thị số lượng kết quả tìm kiếm được
+                searchResultsCount.textContent = `Tìm thấy ${totalResults} kết quả.`;
+
+                // Tính toán số trang
+                const totalPages = Math.ceil(totalResults / resultsPerPage);
+
+                // Cắt dữ liệu cho trang hiện tại
+                const startIndex = (currentPage - 1) * resultsPerPage;
+                const endIndex = Math.min(startIndex + resultsPerPage, totalResults);
+                const resultsForPage = filteredResults.slice(startIndex, endIndex);
+
+                // Hiển thị dữ liệu trên trang hiện tại
+                resultsForPage.forEach(item => {
+                    const row = tableBody.insertRow();
+
+                    const cellHost = row.insertCell(0);
+                    const cellIP = row.insertCell(1);
+                    const cellAction = row.insertCell(2);
+
+                    cellHost.textContent = item.host;
+                    cellIP.textContent = item.ip;
+
+                    // Tạo nút sao chép với biểu tượng và chữ "Copy"
+                    const copyButton = document.createElement('button');
+                    copyButton.className = 'copy-button';
+                    copyButton.onclick = () => copyToClipboard(item.ip);
+
+                    const copyIcon = document.createElement('i');
+                    copyIcon.className = 'fas fa-copy';
+
+                    const copyText = document.createTextNode('Copy');
+
+                    copyButton.appendChild(copyIcon);
+                    copyButton.appendChild(copyText);
+                    cellAction.appendChild(copyButton);
+
+                    // Căn giữa ô chứa nút Copy
+                    cellAction.style.textAlign = 'center';  // Căn giữa theo chiều ngang
+                    cellAction.style.verticalAlign = 'middle';  // Căn giữa theo chiều dọc
+                });
+
+                // Tạo nút phân trang gọn lại
+                createPagination(totalPages);
+            } else {
+                resultDiv.style.display = 'none'; // Ẩn bảng nếu không có kết quả
+                noResultsMessage.textContent = 'Không tìm thấy kết quả phù hợp.'; // Hiển thị thông báo không có kết quả
+                searchResultsCount.textContent = 'Không tìm thấy kết quả nào.'; // Thông báo không có kết quả
+                paginationNav.style.display = 'none'; // Ẩn thanh phân trang
+            }
+        }
+
+        // Hàm tạo các nút phân trang
+        function createPagination(totalPages) {
+            const paginationUl = document.querySelector('#paginationNav ul');
+            const totalPagesDisplay = document.getElementById('totalPagesDisplay');
+            paginationUl.innerHTML = ''; // Xóa nội dung cũ
+
+            // Cập nhật hiển thị tổng số trang
+            totalPagesDisplay.textContent = `Trang ${currentPage} / ${totalPages}`;
+
+            const maxPagesToShow = 5; // Số nút trang tối đa được hiển thị
+            let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+            let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+            // Điều chỉnh khi trang gần cuối
+            if (endPage - startPage < maxPagesToShow - 1) {
+                startPage = Math.max(1, endPage - maxPagesToShow + 1);
+            }
+
+            // Nút "First" (Trang đầu tiên)
+            const firstLi = document.createElement('li');
+            firstLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            const firstA = document.createElement('a');
+            firstA.className = 'page-link';
+            firstA.href = '#';
+            firstA.textContent = 'First';
+            firstA.onclick = (event) => {
+                event.preventDefault();
+                if (currentPage > 1) {
+                    currentPage = 1;
+                    searchByHost(); // Hoặc searchByIP() nếu đang tìm kiếm IP
+                }
+            };
+            firstLi.appendChild(firstA);
+            paginationUl.appendChild(firstLi);
+
+            // Nút Previous
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            const prevA = document.createElement('a');
+            prevA.className = 'page-link';
+            prevA.href = '#';
+            prevA.textContent = 'Previous';
+            prevA.onclick = (event) => {
+                event.preventDefault();
+                if (currentPage > 1) {
+                    currentPage--;
+                    searchByHost(); // Hoặc searchByIP() nếu đang tìm kiếm IP
+                }
+            };
+            prevLi.appendChild(prevA);
+            paginationUl.appendChild(prevLi);
+
+            // Nút trang số
+            for (let i = startPage; i <= endPage; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                const a = document.createElement('a');
+                a.className = 'page-link';
+                a.href = '#';
+                a.textContent = i;
+
+                // Khi người dùng nhấn vào số trang
+                a.onclick = (event) => {
+                    event.preventDefault();
+                    currentPage = i;
+                    searchByHost(); // Hoặc searchByIP() nếu đang tìm kiếm IP
+                };
+
+                li.appendChild(a);
+                paginationUl.appendChild(li);
+            }
+
+            // Nút Next
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            const nextA = document.createElement('a');
+            nextA.className = 'page-link';
+            nextA.href = '#';
+            nextA.textContent = 'Next';
+            nextA.onclick = (event) => {
+                event.preventDefault();
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    searchByHost(); // Hoặc searchByIP() nếu đang tìm kiếm IP
+                }
+            };
+            nextLi.appendChild(nextA);
+            paginationUl.appendChild(nextLi);
+
+            // Nút "Last" (Trang cuối cùng)
+            const lastLi = document.createElement('li');
+            lastLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            const lastA = document.createElement('a');
+            lastA.className = 'page-link';
+            lastA.href = '#';
+            lastA.textContent = 'Last';
+            lastA.onclick = (event) => {
+                event.preventDefault();
+                if (currentPage < totalPages) {
+                    currentPage = totalPages;
+                    searchByHost(); // Hoặc searchByIP() nếu đang tìm kiếm IP
+                }
+            };
+            lastLi.appendChild(lastA);
+            paginationUl.appendChild(lastLi);
+        }
+
+        function changeResultsPerPage() {
+            if (filteredResults.length == 0) {
+                return;
+            }
+            resultsPerPage = parseInt(document.getElementById('resultsPerPage').value);
+            currentPage = 1; // Reset về trang đầu tiên
+            searchByHost(); // Hoặc searchByIP() nếu đang tìm kiếm IP
+        }
+
+        // Hàm nhảy đến trang
+        function jumpToPage() {
+            const jumpToPageInput = document.getElementById('jumpToPage');
+            const totalPages = Math.ceil(filteredResults.length / resultsPerPage); // Tổng số trang
+            const pageNumber = parseInt(jumpToPageInput.value);
+
+            // Kiểm tra tính hợp lệ của số trang nhập vào
+            if (!isNaN(pageNumber) && pageNumber >= 1 && pageNumber <= totalPages) {
+                currentPage = pageNumber;
+                displayResults(filteredResults); // Hiển thị kết quả của trang mới
+            } else {
+                alert(`Vui lòng nhập số trang hợp lệ từ 1 đến ${totalPages}`);
+            }
+        }
+
+        // Hàm sao chép địa chỉ IP vào clipboard
+        function copyToClipboard(ip) {
+            navigator.clipboard.writeText(ip).then(() => {
+                showCopyNotification();
+            }).catch(err => {
+                console.error('Lỗi khi sao chép IP: ', err);
+                alert('Lỗi khi sao chép địa chỉ IP.');
+            });
+        }
+
+        // Hàm hiển thị thông báo sao chép
+        function showCopyNotification() {
+            const notification = document.getElementById('copyNotification');
+            notification.style.display = 'block'; // Hiển thị thông báo
+
+            // Tự động ẩn thông báo sau 2 giây
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 2000);
+        }
+    </script>
+</body>
+
+</html>
