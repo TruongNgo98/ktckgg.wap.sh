@@ -1,109 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CSV to JSON Converter</title>
+    <!-- Bootstrap 5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/x-icon" href="favicon.png" />
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
-        textarea {
-            width: 100%;
-            height: 150px;
-            margin-bottom: 20px;
-        }
-        button {
-            padding: 10px 15px;
-            font-size: 16px;
-            margin-right: 10px;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        /* padding: 20px; */
+      }
+
+      textarea {
+        width: 100%;
+        margin-bottom: 20px;
+      }
     </style>
-</head>
-<body>
-    <h1>CSV to JSON Converter</h1>
-    
-    <!-- Input file CSV -->
-    <input type="file" id="fileInput" accept=".csv">
-    <button onclick="convertCSVFile()">Convert CSV File to JSON</button>
-    
-    <h3>OR</h3>
+  </head>
 
-    <!-- Input text CSV -->
-    <textarea id="csvInput" placeholder="Or paste your CSV here..."></textarea>
-    <button onclick="convertCSVText()">Convert CSV Text to JSON</button>
+  <body>
+    <!-- Nơi mà header sẽ được chèn vào -->
+    <div id="header"></div>
 
-    <h3>Output JSON:</h3>
-    <textarea id="jsonOutput" placeholder="Output will appear here..." readonly></textarea>
-    <br>
-    <button onclick="copyToClipboard()">Copy to Clipboard</button>
+    <div class="container my-5">
+      <h1 class="text-center mb-4">CSV to JSON Converter</h1>
 
+      <!-- Input file CSV -->
+      <div class="mb-3">
+        <label for="fileInput" class="form-label">Choose a CSV file</label>
+        <input type="file" class="form-control" id="fileInput" accept=".csv" />
+      </div>
+      <button class="btn btn-primary mb-3" onclick="convertCSVFile()">
+        Convert CSV File to JSON
+      </button>
+
+      <h3 class="text-center">OR</h3>
+
+      <!-- Input text CSV -->
+      <div class="mb-3">
+        <label for="csvInput" class="form-label"
+          >Paste your CSV data here</label
+        >
+        <textarea
+          class="form-control"
+          id="csvInput"
+          rows="6"
+          placeholder="Or paste your CSV here..."
+        ></textarea>
+      </div>
+      <button class="btn btn-primary mb-4" onclick="convertCSVText()">
+        Convert CSV Text to JSON
+      </button>
+
+      <h3 class="text-center">Output JSON:</h3>
+      <textarea
+        class="form-control mb-3"
+        id="jsonOutput"
+        rows="8"
+        placeholder="Output will appear here..."
+        readonly
+      ></textarea>
+      <button class="btn btn-secondary" onclick="copyToClipboard()">
+        Copy to Clipboard
+      </button>
+    </div>
+
+    <!-- JavaScript -->
+    <!-- Tải file load-header.js để tự động chèn header -->
+    <script src="load-header.js"></script>
     <script>
-        // Chuyển đổi tệp CSV
-        function convertCSVFile() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
+      // Chuyển đổi tệp CSV
+      function convertCSVFile() {
+        const fileInput = document.getElementById("fileInput");
+        const file = fileInput.files[0];
 
-            if (file) {
-                const reader = new FileReader();
-                
-                reader.onload = function(event) {
-                    const csv = event.target.result;
-                    convertCSVtoJSON(csv);
-                };
+        if (file) {
+          const reader = new FileReader();
 
-                reader.readAsText(file);
-            } else {
-                alert("Please select a CSV file first.");
-            }
+          reader.onload = function (event) {
+            const csv = event.target.result;
+            convertCSVtoJSON(csv);
+          };
+
+          reader.readAsText(file);
+        } else {
+          alert("Please select a CSV file first.");
+        }
+      }
+
+      // Chuyển đổi CSV từ văn bản
+      function convertCSVText() {
+        const csv = document.getElementById("csvInput").value;
+        if (csv) {
+          convertCSVtoJSON(csv);
+        } else {
+          alert("Please paste your CSV text.");
+        }
+      }
+
+      // Hàm kiểm tra định dạng CSV
+      function checkCSVFormat(csv) {
+        const lines = csv.split("\n");
+        const headers = lines[0].split(",");
+        const errorLines = [];
+
+        // Kiểm tra từng dòng để đảm bảo số cột khớp với dòng tiêu đề
+        for (let i = 1; i < lines.length; i++) {
+          const currentLine = lines[i].split(",");
+
+          // Nếu số cột không khớp, thêm vào danh sách lỗi
+          if (currentLine.length !== headers.length) {
+            errorLines.push(i + 1); // Dòng bắt đầu từ 1, thêm 1 để bù vào tiêu đề
+          }
         }
 
-        // Chuyển đổi CSV từ văn bản
-        function convertCSVText() {
-            const csv = document.getElementById("csvInput").value;
-            if (csv) {
-                convertCSVtoJSON(csv);
-            } else {
-                alert("Please paste your CSV text.");
-            }
+        return errorLines;
+      }
+
+      // Hàm chuyển đổi CSV sang JSON
+      function convertCSVtoJSON(csv) {
+        const errorLines = checkCSVFormat(csv);
+
+        // Nếu có lỗi định dạng, hiển thị thông báo lỗi với số dòng
+        if (errorLines.length > 0) {
+          alert(
+            "CSV format is invalid. Check the following lines: " +
+              errorLines.join(", ")
+          );
+          return;
         }
 
-        // Hàm chuyển đổi CSV sang JSON
-        function convertCSVtoJSON(csv) {
-            const lines = csv.split("\n");
-            
-            // Lấy các tiêu đề từ dòng đầu tiên
-            const headers = lines[0].split(",");
+        const lines = csv.split("\n");
+        const headers = lines[0].split(",");
 
-            // Khởi tạo mảng cho JSON
-            const result = [];
-
-            // Lặp qua các dòng CSV còn lại
-            for (let i = 1; i < lines.length; i++) {
-                const currentLine = lines[i].split(",");
-
-                // Chỉ xử lý dòng nếu số lượng cột bằng với số tiêu đề
-                if (currentLine.length === headers.length) {
-                    const obj = {};
-                    for (let j = 0; j < headers.length; j++) {
-                        obj[headers[j].trim()] = currentLine[j]?.trim() || "";  // Sử dụng dấu ? để tránh undefined
-                    }
-                    result.push(obj);
-                }
-            }
-
-            // Hiển thị JSON trong thẻ <textarea>
-            document.getElementById("jsonOutput").value = JSON.stringify(result, null, 4);
+        const result = [];
+        for (let i = 1; i < lines.length; i++) {
+          const currentLine = lines[i].split(",");
+          const obj = {};
+          for (let j = 0; j < headers.length; j++) {
+            obj[headers[j].trim()] = currentLine[j]?.trim() || "";
+          }
+          result.push(obj);
         }
 
-        // Hàm sao chép JSON vào clipboard
-        function copyToClipboard() {
-            const jsonOutput = document.getElementById("jsonOutput");
-            jsonOutput.select();
-            document.execCommand("copy");
-            alert("JSON copied to clipboard!");
-        }
+        document.getElementById("jsonOutput").value = JSON.stringify(
+          result,
+          null,
+          4
+        );
+      }
+
+      // Hàm sao chép JSON vào clipboard
+      function copyToClipboard() {
+        const jsonOutput = document.getElementById("jsonOutput");
+        jsonOutput.select();
+        document.execCommand("copy");
+        alert("JSON copied to clipboard!");
+      }
     </script>
-</body>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
 </html>

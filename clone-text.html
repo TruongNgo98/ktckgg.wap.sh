@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clone đoạn văn bản</title>
+
+  <!-- Thêm Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="icon" type="image/x-icon" href="favicon.png">
+</head>
+
+<body>
+  <!-- Nơi mà header sẽ được chèn vào -->
+  <div id="header"></div>
+
+  <div class="container my-5">
+    <h1 class="text-center">Clone đoạn văn bản</h1>
+
+    <div class="mb-3">
+      <label for="textInput" class="form-label">Nhập đoạn văn bản (sử dụng {index} để chèn số tuyến tính):</label>
+      <textarea id="textInput" class="form-control" rows="5"></textarea>
+    </div>
+
+    <div class="mb-3">
+      <label for="numberInput" class="form-label">Nhập số lượng đoạn văn bản cần clone:</label>
+      <input type="number" id="numberInput" class="form-control" min="1" value="1">
+    </div>
+
+    <!-- Sử dụng d-flex để căn ngang các nút -->
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary" onclick="cloneText()">Clone</button>
+      <button id="copyBtn" class="btn btn-success" onclick="copyText()" disabled>Copy kết quả</button>
+    </div>
+
+    <div class="output mt-4">
+      <div class="mb-3">
+        <label for="outputTextarea" class="form-label">Kết quả:</label>
+        <textarea id="outputTextarea" class="form-control" rows="5" readonly></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tải file load-header.js để tự động chèn header -->
+  <script src="load-header.js"></script>
+  <script>
+    function cloneText() {
+      // Lấy giá trị từ các trường nhập liệu
+      const text = document.getElementById('textInput').value;
+      const numberOfClones = parseInt(document.getElementById('numberInput').value);
+
+      // Tạo biến để lưu kết quả
+      let result = '';
+
+      // Tạo các đoạn văn clone
+      for (let i = 1; i <= numberOfClones; i++) {
+        const clonedText = text.replace(/{index}/g, i); // Thay thế {index} bằng số tuyến tính
+        result += clonedText + '\n'; // Thêm mỗi đoạn vào kết quả
+      }
+
+      // Hiển thị kết quả trong textarea
+      document.getElementById('outputTextarea').value = result;
+
+      // Kích hoạt nút "Copy" khi có kết quả
+      const copyBtn = document.getElementById('copyBtn');
+      if (result.trim() !== '') {
+        copyBtn.disabled = false; // Kích hoạt nút
+      }
+    }
+
+    function copyText() {
+      // Lấy giá trị trong textarea kết quả
+      const outputTextarea = document.getElementById('outputTextarea');
+
+      // Chọn toàn bộ văn bản
+      outputTextarea.select();
+      outputTextarea.setSelectionRange(0, 99999); // Cho di động
+
+      // Copy văn bản đã chọn vào clipboard
+      document.execCommand('copy');
+
+      // Thông báo rằng kết quả đã được copy
+      alert('Kết quả đã được copy vào clipboard!');
+    }
+  </script>
+</body>
+
+</html>
