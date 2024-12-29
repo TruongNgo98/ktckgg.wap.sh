@@ -14,14 +14,14 @@
 </head>
 
 <body>
-  <!-- Nơi mà header sẽ được chèn vào -->
+  <!-- Header sẽ được chèn vào -->
   <div id="header"></div>
 
   <div class="container my-5">
     <h1 class="text-center">Clone đoạn văn bản</h1>
 
     <div class="mb-3">
-      <label for="textInput" class="form-label">Nhập đoạn văn bản (sử dụng {index} để chèn số tuyến tính):</label>
+      <label for="textInput" class="form-label">Nhập đoạn văn bản (sử dụng {index} để chèn tham số):</label>
       <textarea id="textInput" class="form-control" rows="5"></textarea>
     </div>
 
@@ -30,7 +30,17 @@
       <input type="number" id="numberInput" class="form-control" min="1" value="1">
     </div>
 
-    <!-- Sử dụng d-flex để căn ngang các nút -->
+    <div class="mb-3">
+      <input type="checkbox" id="customIndexCheckbox" onchange="toggleCustomIndex()"> Sử dụng giá trị {index} tùy chỉnh
+    </div>
+
+    <!-- Phần nhập giá trị {index} tùy chỉnh với cách xuống dòng -->
+    <div class="mb-3" id="customIndexInputContainer" style="display: none;">
+      <label for="customIndexes" class="form-label">Nhập mỗi giá trị {index} trên một dòng riêng biệt (phân biệt từng
+        giá trị bằng cách xuống hàng):</label>
+      <textarea id="customIndexes" class="form-control" rows="5" placeholder="Mỗi giá trị trên một dòng"></textarea>
+    </div>
+
     <div class="d-flex gap-2">
       <button class="btn btn-primary" onclick="cloneText()">Clone</button>
       <button id="copyBtn" class="btn btn-success" onclick="copyText()" disabled>Copy kết quả</button>
@@ -46,43 +56,56 @@
 
   <!-- Tải file load-header.js để tự động chèn header -->
   <script src="load-header.js"></script>
+
   <script>
-    function cloneText() {
-      // Lấy giá trị từ các trường nhập liệu
-      const text = document.getElementById('textInput').value;
-      const numberOfClones = parseInt(document.getElementById('numberInput').value);
-
-      // Tạo biến để lưu kết quả
-      let result = '';
-
-      // Tạo các đoạn văn clone
-      for (let i = 1; i <= numberOfClones; i++) {
-        const clonedText = text.replace(/{index}/g, i); // Thay thế {index} bằng số tuyến tính
-        result += clonedText + '\n'; // Thêm mỗi đoạn vào kết quả
-      }
-
-      // Hiển thị kết quả trong textarea
-      document.getElementById('outputTextarea').value = result;
-
-      // Kích hoạt nút "Copy" khi có kết quả
-      const copyBtn = document.getElementById('copyBtn');
-      if (result.trim() !== '') {
-        copyBtn.disabled = false; // Kích hoạt nút
-      }
+    function toggleCustomIndex() {
+      const customIndexInputContainer = document.getElementById('customIndexInputContainer');
+      customIndexInputContainer.style.display = document.getElementById('customIndexCheckbox').checked ? 'block' : 'none';
     }
 
+    function cloneText() {
+      const text = document.getElementById('textInput').value;
+      const numberOfClones = parseInt(document.getElementById('numberInput').value);
+      const isCustomIndex = document.getElementById('customIndexCheckbox').checked;
+
+      let result = '';
+
+      if (isCustomIndex) {
+        // Chế độ tùy chỉnh giá trị {index}
+        const customIndexes = document.getElementById('customIndexes').value.split('\n').map(index => index.trim()).filter(index => index !== '');
+
+        if (customIndexes.length === 0) {
+          alert('Vui lòng nhập ít nhất một giá trị {index} (bao gồm chữ hoặc số).');
+          return;
+        }
+
+        for (const customIndex of customIndexes) {
+          const clonedText = text.replace(/{index}/g, customIndex); // Thay thế {index} bằng giá trị tùy chỉnh
+          result += clonedText + '\n';
+        }
+
+      } else {
+        // Chế độ tuyến tính
+        if (isNaN(numberOfClones) || numberOfClones <= 0) {
+          alert('Vui lòng nhập một số lượng hợp lệ.');
+          return;
+        }
+
+        for (let i = 1; i <= numberOfClones; i++) {
+          const clonedText = text.replace(/{index}/g, i); // Thay thế {index} bằng số tuyến tính
+          result += clonedText + '\n';
+        }
+      }
+
+      document.getElementById('outputTextarea').value = result.trim();
+      document.getElementById('copyBtn').disabled = result.trim() === '';
+    }
+
+
     function copyText() {
-      // Lấy giá trị trong textarea kết quả
       const outputTextarea = document.getElementById('outputTextarea');
-
-      // Chọn toàn bộ văn bản
       outputTextarea.select();
-      outputTextarea.setSelectionRange(0, 99999); // Cho di động
-
-      // Copy văn bản đã chọn vào clipboard
       document.execCommand('copy');
-
-      // Thông báo rằng kết quả đã được copy
       alert('Kết quả đã được copy vào clipboard!');
     }
   </script>
